@@ -1,0 +1,2431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Marketplace - Blockchain Platform</title>
+    
+    <!-- External Libraries -->
+ 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #333;
+            margin: 20px 0 10px 0;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:hover {
+            background: #f8f9ff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .status-pending {
+            background: #ffc107;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-approved {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-rejected {
+            background: #dc3545;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .balance-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .address-display {
+            background: #f8f9ff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌾 Crop Marketplace - Blockchain Platform</h1>
+
+        <!-- Login Section -->
+        <div id="loginDiv">
+            <div class="header">
+                <button id="connectWalletBtn">🔗 Connect MetaMask</button>
+                <div id="walletAddress">Not Connected</div>
+            </div>
+
+            <div style="text-align: center; margin: 40px 0;">
+                <h2>Select Your Role</h2>
+                <select id="roleSelect" style="max-width: 300px; margin: 20px auto;">
+                    <option value="">-- Choose Role --</option>
+                    <option value="seller">🌱 Farmer/Seller</option>
+                    <option value="buyer">🛒 Buyer</option>
+                    <option value="insurance">🛡️ Insurance Authority</option>
+                </select>
+                <br><br>
+                <button id="loginBtn">Login</button>
+            </div>
+        </div>
+
+        <!-- Seller Dashboard -->
+        <div id="sellerDiv" class="hidden">
+            <div class="header">
+                <h2>🌱 Farmer Dashboard</h2>
+                <button onclick="logout()">Logout</button>
+            </div>
+            
+            <div class="address-display">Address: <span id="sellerAddress"></span></div>
+            <div class="balance-display" id="sellerBalance">🪙 0</div>
+
+            <button onclick="showAddCropModal()">➕ Add New Crop</button>
+            <button onclick="showInsuranceModal()">🛡️ Insurance</button>
+            <button onclick="showClaimModal()">📋 Submit Claim</button>
+
+            <h2>My Crops</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Crop Name</th>
+                        <th>Base Price</th>
+                        <th>Current Price</th>
+                        <th>Stock</th>
+                        <th>Risk Score</th>
+                        <th>Add Stock</th>
+                    </tr>
+                </thead>
+                <tbody id="sellerCropsTable"></tbody>
+            </table>
+
+            <h2>Sales History</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Crop</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                        <th>Buyer</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="sellerHistoryTable"></tbody>
+            </table>
+
+            <h2>My Insurance Claims</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Claim ID</th>
+                        <th>Crop ID</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="farmerClaimsTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Buyer Dashboard -->
+        <div id="buyerDiv" class="hidden">
+            <div class="header">
+                <h2>🛒 Buyer Dashboard</h2>
+                <button onclick="logout()">Logout</button>
+            </div>
+            
+            <div class="address-display">Address: <span id="buyerAddress"></span></div>
+            <div class="balance-display" id="buyerBalance">🪙 0</div>
+
+            <div class="form-group">
+                <label>Top Up Balance:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="topUpAmount" placeholder="Enter amount">
+                    <button onclick="topUp()">💰 Top Up</button>
+                </div>
+            </div>
+
+            <h2>Available Crops</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Crop Name</th>
+                        <th>Price/Kg</th>
+                        <th>Stock</th>
+                        <th>Risk Level</th>
+                        <th>Farmer</th>
+                        <th>Quantity</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="buyerCropsTable"></tbody>
+            </table>
+
+            <h2>Purchase History</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Crop</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                        <th>Farmer</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="buyerHistoryTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Insurance Authority Dashboard -->
+        <div id="insuranceDiv" class="hidden">
+            <div class="header">
+                <h2>🛡️ Insurance Authority Dashboard</h2>
+                <button onclick="logout()">Logout</button>
+            </div>
+            
+            <div class="address-display">Address: <span id="insuranceAddress"></span></div>
+            <div class="balance-display" id="insuranceFundBalance">🪙 0</div>
+
+            <h2>Pending Claims</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Claim ID</th>
+                        <th>Farmer</th>
+                        <th>Crop ID</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                        <th>Evidence</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingClaimsTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Add Crop Modal -->
+        <div id="addCropModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeAddCropModal()">&times;</span>
+                <h2>Add New Crop</h2>
+                
+                <div class="form-group">
+                    <label>Crop Name:</label>
+                    <input type="text" id="newCropName" placeholder="e.g., Wheat">
+                </div>
+
+                <div class="form-group">
+                    <label>Price per Kg (🪙):</label>
+                    <input type="number" id="newCropPrice" placeholder="e.g., 50">
+                </div>
+
+                <div class="form-group">
+                    <label>Initial Stock (Kg):</label>
+                    <input type="number" id="newCropStock" placeholder="e.g., 1000">
+                </div>
+
+                <div class="form-group">
+                    <label>Crop Image (for disease detection):</label>
+                    <input type="file" id="newCropImage" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label>Select Location on Map:</label>
+                    <div id="map"></div>
+                    <p>📍 Selected: Lat: <span id="displayLat">--</span>, Lon: <span id="displayLon">--</span></p>
+                    <input type="hidden" id="newCropLat">
+                    <input type="hidden" id="newCropLon">
+                </div>
+
+                <div id="addCropLoading" class="loading hidden">
+                    ⏳ Processing crop data (IPFS upload + AI analysis)...
+                </div>
+
+                <button onclick="addCropWithDCRI()">✅ Add Crop with DCRI Analysis</button>
+            </div>
+        </div>
+
+        <!-- Insurance Modal -->
+        <div id="insuranceModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeInsuranceModal()">&times;</span>
+                <h2>Crop Insurance</h2>
+                
+                <div id="insuranceStatus"></div>
+
+                <div style="margin: 20px 0; padding: 15px; background: #e7f3ff; border-radius: 8px;">
+                    <h3>Insurance Details:</h3>
+                    <p>💰 Premium: 🪙 100</p>
+                    <p>🛡️ Coverage: 🪙 500</p>
+                    <p>📋 Covers crop losses due to disease, weather, etc.</p>
+                </div>
+
+                <button onclick="purchaseInsurance()">Purchase Insurance</button>
+            </div>
+        </div>
+
+        <!-- Claim Modal -->
+        <div id="claimModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeClaimModal()">&times;</span>
+                <h2>Submit Insurance Claim</h2>
+                
+                <div class="form-group">
+                    <label>Select Crop:</label>
+                    <select id="claimCropId"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Claim Amount (🪙):</label>
+                    <input type="number" id="claimAmount" placeholder="Max: 500">
+                </div>
+
+                <div class="form-group">
+                    <label>Reason for Claim:</label>
+                    <textarea id="claimReason" rows="4" placeholder="Describe the loss..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Evidence (optional):</label>
+                    <input type="file" id="claimEvidence" accept="image/*,application/pdf">
+                </div>
+
+                <button onclick="submitClaim()">Submit Claim</button>
+            </div>
+        </div>
+    </div>
+
+    
+	<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+
+
+</body>
+</html>
+<script>
+const role = "{{ role if role else '' }}";
+window.onload = () => {
+  if(role === "seller") {
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("sellerDiv").classList.remove("hidden");
+    loadSellerData();
+    loadSellerHistory();
+    loadFarmerClaims();
+  } else if(role === "buyer") {
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("buyerDiv").classList.remove("hidden");
+    loadBuyerData();
+    loadBuyerHistory();
+  } else if(role === "insurance") {
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("insuranceDiv").classList.remove("hidden");
+    loadInsuranceDashboard();
+  }
+}
+
+let provider, signer, userAddress, contract;
+let map, marker;
+let selectedLat = null, selectedLon = null;
+
+// Replace with your deployed contract address
+const contractAddress = "";
+
+// Complete ABI - Fill this after deploying your contract
+const abi = [
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "pricePerKg",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stock",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "imageHash",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "location",
+				"type": "string"
+			}
+		],
+		"name": "addCrop",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "addStock",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "qty",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "totalPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "Bought",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "qty",
+				"type": "uint256"
+			}
+		],
+		"name": "buyCrop",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "changePrice",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "claimId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum FarmFlowEnhanced.ClaimStatus",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "payoutAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "ClaimProcessed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "claimId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "ClaimSubmitted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "pricePerKg",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "stock",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "CropAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "oldPrice",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "alphaScore",
+				"type": "uint256"
+			}
+		],
+		"name": "CropPriceUpdatedByDCRI",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newStock",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "CropUpdated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			}
+		],
+		"name": "deactivateCrop",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "premium",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "coverage",
+				"type": "uint256"
+			}
+		],
+		"name": "InsurancePurchased",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "claimId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "approve",
+				"type": "bool"
+			}
+		],
+		"name": "processClaim",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "purchaseInsurance",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "claimAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "evidenceHash",
+				"type": "string"
+			}
+		],
+		"name": "submitClaim",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "topUpBalance",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "alphaScore",
+				"type": "uint256"
+			}
+		],
+		"name": "updateCropDCRI",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawFarmerBalance",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "buyerBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "buyerPurchases",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "cropName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "qty",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "claimCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "COVERAGE_MULTIPLIER",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "cropCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "crops",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "basePricePerKg",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "currentPricePerKg",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stock",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "imageHash",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "location",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "alphaScore",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "lastPriceUpdate",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "active",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "farmerBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "farmerSales",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "cropName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "qty",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllCrops",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "basePricePerKg",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "currentPricePerKg",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "imageHash",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "location",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "alphaScore",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastPriceUpdate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "active",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.Crop[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAvailableCrops",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "basePricePerKg",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "currentPricePerKg",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "imageHash",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "location",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "alphaScore",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastPriceUpdate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "active",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.Crop[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			}
+		],
+		"name": "getBuyerBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			}
+		],
+		"name": "getBuyerPurchases",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "cropName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "qty",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "buyer",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.Purchase[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			}
+		],
+		"name": "getCrop",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "basePricePerKg",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "currentPricePerKg",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stock",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "imageHash",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "location",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "alphaScore",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastPriceUpdate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "active",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.Crop",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getCropCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "getFarmerBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "getFarmerClaims",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "cropId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "claimAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "reason",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "evidenceHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum FarmFlowEnhanced.ClaimStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.InsuranceClaim[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "getFarmerSales",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "cropName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "qty",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "buyer",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.Purchase[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getInsuranceAuthority",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			}
+		],
+		"name": "getInsurancePolicy",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "premiumPaid",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "coverageAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "purchaseDate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "active",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.InsurancePolicy",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getPendingClaims",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "farmer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "cropId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "claimAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "reason",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "evidenceHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum FarmFlowEnhanced.ClaimStatus",
+						"name": "status",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct FarmFlowEnhanced.InsuranceClaim[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "INSURANCE_PREMIUM",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "insuranceAuthority",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "insuranceBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "insuranceClaims",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "claimId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "farmer",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "cropId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "claimAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "evidenceHash",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum FarmFlowEnhanced.ClaimStatus",
+				"name": "status",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "insurancePolicies",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "premiumPaid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "coverageAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "purchaseDate",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "active",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+	
+// ============ Map Functions ============
+function initMap() {
+  map = L.map('map').setView([20.5937, 78.9629], 5);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+  
+  map.on('click', function(e) {
+    selectedLat = e.latlng.lat.toFixed(6);
+    selectedLon = e.latlng.lng.toFixed(6);
+    
+    if (marker) {
+      map.removeLayer(marker);
+    }
+    
+    marker = L.marker([selectedLat, selectedLon]).addTo(map);
+    marker.bindPopup(`<b>Selected Location</b><br>Lat: ${selectedLat}<br>Lon: ${selectedLon}`).openPopup();
+    
+    document.getElementById('displayLat').textContent = selectedLat;
+    document.getElementById('displayLon').textContent = selectedLon;
+    document.getElementById('newCropLat').value = selectedLat;
+    document.getElementById('newCropLon').value = selectedLon;
+  });
+}
+
+function showAddCropModal() {
+  document.getElementById('addCropModal').style.display = 'block';
+  setTimeout(() => {
+    if (!map) {
+      initMap();
+    } else {
+      map.invalidateSize();
+    }
+  }, 100);
+}
+
+function closeAddCropModal() {
+  document.getElementById('addCropModal').style.display = 'none';
+}
+
+// ============ Wallet Connection ============
+async function connectWallet() {
+    if (window.ethereum) {
+        try {
+            provider = new ethers.providers.Web3Provider(window.ethereum,"sepolia");
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            userAddress = await signer.getAddress();
+            contract = new ethers.Contract(contractAddress, abi, signer);
+            document.getElementById("walletAddress").innerText = "✅ Connected: " + userAddress;
+            alert("Wallet connected successfully!");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to connect wallet: " + err.message);
+        }
+    } else {
+        alert("Please install MetaMask!");
+    }
+}
+
+// ============ Login / Logout ============
+function login() {
+    if (!userAddress) {
+        alert("Please connect wallet first!");
+        return;
+    }
+    
+    const role = document.getElementById("roleSelect").value;
+    document.getElementById("loginDiv").classList.add("hidden");
+
+    if (role === "seller") {
+        document.getElementById("sellerDiv").classList.remove("hidden");
+        document.getElementById("sellerAddress").innerText = userAddress;
+        loadSellerData();
+        loadSellerHistory();
+        loadFarmerClaims();
+    } else if (role === "buyer") {
+        document.getElementById("buyerDiv").classList.remove("hidden");
+        document.getElementById("buyerAddress").innerText = userAddress;
+        loadBuyerData();
+        loadBuyerHistory();
+    } else if (role === "insurance") {
+        document.getElementById("insuranceDiv").classList.remove("hidden");
+        document.getElementById("insuranceAddress").innerText = userAddress;
+        loadInsuranceDashboard();
+    }
+}
+
+function logout() {
+    location.reload();
+}
+
+// ============ Seller Functions ============
+async function loadSellerData() {
+    try {
+        const balance = await contract.getFarmerBalance(userAddress);
+        document.getElementById("sellerBalance").innerText = "🪙 " + balance.toString();
+
+        const crops = await contract.getAllCrops();
+        const tbody = document.getElementById("sellerCropsTable");
+        tbody.innerHTML = "";
+        
+        crops.forEach((crop, index) => {
+            if (crop.farmer.toLowerCase() === userAddress.toLowerCase()) {
+                const alphaDisplay = (crop.alphaScore / 1000).toFixed(3);
+                const riskLevel = crop.alphaScore > 700 ? '🔴' : crop.alphaScore > 400 ? '🟡' : '🟢';
+                
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index+1}</td>
+                    <td>${crop.name}</td>
+                    <td>${crop.basePricePerKg}</td>
+                    <td>${crop.currentPricePerKg}</td>
+                    <td>${crop.stock}</td>
+                    <td>${riskLevel} ${alphaDisplay}</td>
+                    <td>
+                        <input type="number" id="addStock${index}" placeholder="Qty" style="width:60px;">
+                        <button onclick="addStock(${index+1})">➕</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error loading data: " + err.message);
+    }
+}
+
+async function addCropWithDCRI() {
+    try {
+        const name = document.getElementById("newCropName").value;
+        const price = Number(document.getElementById("newCropPrice").value);
+        const stock = Number(document.getElementById("newCropStock").value);
+        const imageFile = document.getElementById("newCropImage").files[0];
+        const lat = document.getElementById("newCropLat").value;
+        const lon = document.getElementById("newCropLon").value;
+
+        if (!name || !price || !stock || !imageFile || !lat || !lon) {
+            alert("Please fill all fields and select location on map!");
+            return;
+        }
+
+        document.getElementById("addCropLoading").style.display = "block";
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const imageBase64 = e.target.result;
+
+            try {
+                console.log("Sending data to backend for IPFS + DCRI calculation...");
+
+                const response = await fetch('/api/process_crop_listing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cropId: 0,
+                        cropName: name,
+                        image: imageBase64,
+                        latitude: lat,
+                        longitude: lon
+                    })
+                });
+
+                const result = await response.json();
+                console.log("Backend response:", result);
+
+                if (!result.success) {
+                    alert("Error from backend: " + result.error);
+                    return;
+                }
+
+                const location = `${parseFloat(lat).toFixed(6)},${parseFloat(lon).toFixed(6)}`;
+
+
+                console.log("Adding crop to blockchain with arguments:", name, price, stock, result.ipfsHash, location);
+                const txAdd = await contract.addCrop(name, price, stock, result.ipfsHash, location);
+                console.log("Transaction sent. Waiting for confirmation...");
+                await txAdd.wait();
+                console.log("Crop added successfully!");
+
+                let totalCrops = await contract.getCropCount();
+                let newCropId = totalCrops.toNumber();
+                console.log("New Crop ID:", newCropId);
+
+                console.log("Updating DCRI with alpha score:", result.alphaScore);
+                const txDCRI = await contract.updateCropDCRI(newCropId-1, result.alphaScore);
+                await txDCRI.wait();
+                console.log("DCRI updated successfully!");
+
+                alert(`✅ Crop added successfully!
+
+Crop ID: ${newCropId}
+IPFS Hash: ${result.ipfsHash}
+Alpha Score: ${(result.alphaScore / 1000).toFixed(3)}
+Disease %: ${(result.diseasePercentage * 100).toFixed(1)}%
+
+Weather Data:
+- Temperature: ${result.weatherData.temperature}°C
+- Humidity: ${result.weatherData.humidity}%
+- Rainfall: ${result.weatherData.rainfall}mm
+
+Soil Data:
+- pH: ${result.soilData.soil_ph}
+- Moisture: ${result.soilData.soil_moisture}%`);
+
+                document.getElementById("newCropName").value = "";
+                document.getElementById("newCropPrice").value = "";
+                document.getElementById("newCropStock").value = "";
+                document.getElementById("newCropImage").value = "";
+                
+                closeAddCropModal();
+                loadSellerData();
+
+            } catch (err) {
+                console.error("Unexpected error during crop addition:", err);
+                alert("Error: " + (err.data?.message || err.message || err));
+            } finally {
+                document.getElementById("addCropLoading").style.display = "none";
+            }
+        };
+
+        reader.readAsDataURL(imageFile);
+
+    } catch (err) {
+        console.error("Unexpected error:", err);
+        alert("Error: " + err.message);
+        document.getElementById("addCropLoading").style.display = "none";
+    }
+}
+
+
+
+async function addStock(cropId) {
+    try {
+        const amount = Number(document.getElementById("addStock" + (cropId-1)).value);
+        if (amount <= 0) return alert("Enter valid amount");
+        
+        const tx = await contract.addStock(cropId, amount);
+        await tx.wait();
+        alert("Stock added!");
+        loadSellerData();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+async function loadSellerHistory() {
+    try {
+        const history = await contract.getFarmerSales(userAddress);
+        const tbody = document.getElementById("sellerHistoryTable");
+        tbody.innerHTML = "";
+        history.forEach((s, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index+1}</td>
+                <td>${s.cropName}</td>
+                <td>${s.qty}</td>
+                <td>${s.totalPrice}</td>
+                <td>${s.buyer.substring(0,10)}...</td>
+                <td>${new Date(s.timestamp * 1000).toLocaleString()}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// ============ Buyer Functions ============
+async function loadBuyerData() {
+    try {
+        const balance = await contract.getBuyerBalance(userAddress);
+        document.getElementById("buyerBalance").innerText = "🪙 " + balance.toString();
+
+        const crops = await contract.getAvailableCrops();
+        const tbody = document.getElementById("buyerCropsTable");
+        tbody.innerHTML = "";
+        
+        crops.forEach((crop, index) => {
+            const alphaDisplay = (crop.alphaScore / 1000).toFixed(3);
+            const riskLevel = crop.alphaScore > 700 ? '🔴 High' : crop.alphaScore > 400 ? '🟡 Med' : '🟢 Low';
+            
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index+1}</td>
+                <td>${crop.name}</td>
+                <td>${crop.currentPricePerKg}</td>
+                <td>${crop.stock}</td>
+                <td>${riskLevel} (${alphaDisplay})</td>
+                <td>${crop.farmer.substring(0,10)}...</td>
+                <td><input type="number" id="buyQty${index}" placeholder="Qty" style="width:70px;"></td>
+                <td><button onclick="buyCrop(${crop.id})">🛒 Buy</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function buyCrop(cropId) {
+    try {
+        const qty = Number(document.getElementById("buyQty" + (cropId-1)).value);
+        if (qty <= 0) return alert("Enter valid quantity");
+
+        const tx = await contract.buyCrop(cropId, qty);
+        await tx.wait();
+        alert("Purchase successful!");
+        loadBuyerData();
+        loadBuyerHistory();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+async function loadBuyerHistory() {
+    try {
+        const history = await contract.getBuyerPurchases(userAddress);
+        const tbody = document.getElementById("buyerHistoryTable");
+        tbody.innerHTML = "";
+        history.forEach((p, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index+1}</td>
+                <td>${p.cropName}</td>
+                <td>${p.qty}</td>
+                <td>${p.totalPrice}</td>
+                <td>${p.farmer.substring(0,10)}...</td>
+                <td>${new Date(p.timestamp * 1000).toLocaleString()}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function topUp() {
+    try {
+        const amount = Number(document.getElementById("topUpAmount").value);
+        if (amount <= 0) return alert("Enter valid amount");
+        
+        const tx = await contract.topUpBalance(amount);
+        await tx.wait();
+        alert("Balance topped up!");
+        loadBuyerData();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+// ============ Insurance Functions ============
+function showInsuranceModal() {
+    loadInsuranceStatus();
+    document.getElementById("insuranceModal").style.display = "block";
+}
+
+function closeInsuranceModal() {
+    document.getElementById("insuranceModal").style.display = "none";
+}
+
+async function loadInsuranceStatus() {
+    try {
+        const policy = await contract.getInsurancePolicy(userAddress);
+        const statusDiv = document.getElementById("insuranceStatus");
+        
+        if (policy.active) {
+            statusDiv.innerHTML = `
+                <div style="background: #d4edda; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
+                    <p style="margin: 0;"><strong>✅ Active Insurance Policy</strong></p>
+                    <p style="margin: 10px 0 0 0;">Premium Paid: 🪙 ${policy.premiumPaid}</p>
+                    <p style="margin: 5px 0 0 0;">Coverage: 🪙 ${policy.coverageAmount}</p>
+                    <p style="margin: 5px 0 0 0;">Purchase Date: ${new Date(policy.purchaseDate * 1000).toLocaleDateString()}</p>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <div style="background: #f8d7da; padding: 15px; border-radius: 5px; border-left: 4px solid #dc3545;">
+                    <p style="margin: 0;"><strong>❌ No Active Insurance Policy</strong></p>
+                    <p style="margin: 10px 0 0 0;">Purchase insurance to protect your crops against losses.</p>
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function purchaseInsurance() {
+    try {
+        const tx = await contract.purchaseInsurance();
+        await tx.wait();
+        alert("Insurance purchased successfully!");
+        loadInsuranceStatus();
+        loadSellerData();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+function showClaimModal() {
+    loadFarmerCropsForClaim();
+    document.getElementById("claimModal").style.display = "block";
+}
+
+function closeClaimModal() {
+    document.getElementById("claimModal").style.display = "none";
+}
+
+async function loadFarmerCropsForClaim() {
+    try {
+        const crops = await contract.getAllCrops();
+        const select = document.getElementById("claimCropId");
+        select.innerHTML = "<option value=''>-- Select Crop --</option>";
+        
+        crops.forEach((crop, index) => {
+            if (crop.farmer.toLowerCase() === userAddress.toLowerCase()) {
+                const option = document.createElement("option");
+                option.value = crop.id;
+                option.text = `${crop.name} (ID: ${crop.id})`;
+                select.appendChild(option);
+            }
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function submitClaim() {
+    try {
+        const cropId = document.getElementById("claimCropId").value;
+        const amount = Number(document.getElementById("claimAmount").value);
+        const reason = document.getElementById("claimReason").value;
+        const evidenceFile = document.getElementById("claimEvidence").files[0];
+
+        if (!cropId || !amount || !reason) {
+            alert("Please fill all required fields!");
+            return;
+        }
+
+        let evidenceHash = "QmDefault";
+        
+        if (evidenceFile) {
+            evidenceHash = "QmEvidence" + Date.now();
+        }
+
+        const tx = await contract.submitClaim(cropId, amount, reason, evidenceHash);
+        await tx.wait();
+        
+        alert("Claim submitted successfully!");
+        closeClaimModal();
+        loadFarmerClaims();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+async function loadFarmerClaims() {
+    try {
+        const claims = await contract.getFarmerClaims(userAddress);
+        const tbody = document.getElementById("farmerClaimsTable");
+        tbody.innerHTML = "";
+        
+        claims.forEach((claim) => {
+            const statusText = claim.status === 0 ? '<span class="status-pending">Pending</span>' :
+                             claim.status === 1 ? '<span class="status-approved">Approved</span>' :
+                             '<span class="status-rejected">Rejected</span>';
+            
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${claim.claimId}</td>
+                <td>${claim.cropId}</td>
+                <td>🪙 ${claim.claimAmount}</td>
+                <td>${claim.reason}</td>
+                <td>${statusText}</td>
+                <td>${new Date(claim.timestamp * 1000).toLocaleString()}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// ============ Insurance Authority Functions ============
+async function loadInsuranceDashboard() {
+    try {
+        const authAddress = await contract.insuranceAuthority();
+        
+        if (userAddress.toLowerCase() !== authAddress.toLowerCase()) {
+            alert("You are not the insurance authority!");
+            logout();
+            return;
+        }
+
+        const balance = await contract.getBuyerBalance(userAddress);
+        document.getElementById("insuranceFundBalance").innerText = "🪙 " + balance.toString();
+
+        const pendingClaims = await contract.getPendingClaims();
+        const tbody = document.getElementById("pendingClaimsTable");
+        tbody.innerHTML = "";
+        
+        pendingClaims.forEach((claim) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${claim.claimId}</td>
+                <td>${claim.farmer.substring(0,10)}...</td>
+                <td>${claim.cropId}</td>
+                <td>🪙 ${claim.claimAmount}</td>
+                <td>${claim.reason}</td>
+                <td><a href="https://gateway.pinata.cloud/ipfs/QmQXSgqBoJs4pEx5XnAeXpK55gCzRmnHuhrmF2TuiQmPy6" target="_blank">View</a></td>
+                <td>${new Date(claim.timestamp * 1000).toLocaleString()}</td>
+                <td>
+                    <button onclick="processClaimAction(${claim.claimId}, true)" class="btn-success">✅</button>
+                    <button onclick="processClaimAction(${claim.claimId}, false)" class="btn-danger">❌</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error: " + err.message);
+    }
+}
+
+async function processClaimAction(claimId, approve) {
+    try {
+        const action = approve ? "approve" : "reject";
+        if (!confirm(`Are you sure you want to ${action} this claim?`)) return;
+
+        const tx = await contract.processClaim(claimId, approve);
+        await tx.wait();
+        
+        alert(`Claim ${approve ? 'approved' : 'rejected'} successfully!`);
+        loadInsuranceDashboard();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+// ============ Event Listeners ============
+document.getElementById("connectWalletBtn").onclick = connectWallet;
+document.getElementById("loginBtn").onclick = login;
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = "none";
+    }
+}
+</script>
+</body>
+</html>
