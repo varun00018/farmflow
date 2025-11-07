@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCRI Analysis - FarmFlow</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+.container {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+h2 {
+    color: #4a7c59;
+    text-align: center;
+    margin-bottom: 30px;
+}
+.form-group {
+    margin-bottom: 20px;
+}
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+input:focus {
+    outline: none;
+    border-color: #4a7c59;
+}
+button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #4a7c59 0%, #2c5f2d 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 124, 89, 0.4);
+}
+#map {
+    height: 350px;
+    width: 100%;
+    border-radius: 8px;
+    margin: 10px 0;
+    border: 2px solid #4a7c59;
+}
+.location-display {
+    background: #e8f5e9;
+    padding: 12px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-family: monospace;
+    font-size: 14px;
+}
+.info-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 5px;
+    font-size: 14px;
+}
+.result-container {
+    margin-top: 30px;
+    padding: 25px;
+    background: #f0f9f4;
+    border-radius: 10px;
+    border-left: 5px solid #4a7c59;
+}
+.result-item {
+    margin: 15px 0;
+    padding: 12px;
+    background: white;
+    border-radius: 5px;
+}
+.result-label {
+    font-weight: bold;
+    color: #2c5f2d;
+    margin-right: 10px;
+}
+.risk-high { color: #dc3545; font-weight: bold; }
+.risk-medium { color: #ffc107; font-weight: bold; }
+.risk-low { color: #28a745; font-weight: bold; }
+.back-link {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+.back-link:hover {
+    background: #545b62;
+}
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+.data-card {
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.data-card h4 {
+    margin: 0 0 10px 0;
+    color: #4a7c59;
+    font-size: 14px;
+}
+.data-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>📊 Dynamic Crop Risk Index (DCRI) Analysis</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">📷 Upload Crop Image:</label>
+            <input type="file" name="file" id="file" accept="image/*" required>
+        </div>
+        
+        <div class="form-group">
+            <label>📍 Select Location on Map:</label>
+            <div class="info-box">
+                Click on the map to select your crop location. This will be used to fetch real-time weather and soil data.
+            </div>
+            <div id="map"></div>
+            <div class="location-display">
+                <strong>Selected Location:</strong><br>
+                Latitude: <span id="displayLat">Not selected</span><br>
+                Longitude: <span id="displayLon">Not selected</span>
+            </div>
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
+        </div>
+        
+        <button type="submit">🔍 Analyze Crop Risk</button>
+    </form>
+
+    {% if result %}
+    <div class="result-container">
+        <h3 style="text-align: center; color: #2c5f2d; margin-top: 0;">📈 Analysis Results</h3>
+        
+        {% if result.error %}
+        <div class="result-item" style="background: #f8d7da; color: #721c24;">
+            <strong>Error:</strong> {{ result.error }}
+        </div>
+        {% else %}
+        
+        <div class="result-item" style="font-size: 18px; text-align: center;">
+            <span class="result-label">🦠 Disease Percentage:</span>
+            <span style="color: #dc3545; font-weight: bold;">{{ result.disease_percentage }}</span>
+        </div>
+        
+        <div class="result-item" style="font-size: 24px; text-align: center; background: linear-gradient(135deg, #f0f9f4 0%, #e8f5e9 100%);">
+            <span class="result-label">⚠️ DCRI Alpha Score:</span>
+            <span style="font-size: 32px; color: #4a7c59; font-weight: bold;">{{ result.alpha_score }}</span>
+        </div>
+        
+        <div class="result-item" style="text-align: center; font-size: 20px;">
+            <span class="result-label">Risk Level:</span>
+            <span class="risk-{{ result.risk_level|lower }}">
+                {% if result.risk_level == 'High' %}🔴 HIGH RISK
+                {% elif result.risk_level == 'Medium' %}🟡 MEDIUM RISK
+                {% else %}🟢 LOW RISK{% endif %}
+            </span>
+        </div>
+
+        <h4 style="margin-top: 25px; color: #2c5f2d;">🌦️ Environmental Data</h4>
+        <div class="data-grid">
+            <div class="data-card">
+                <h4>🌡️ Temperature</h4>
+                <div class="data-value">{{ "%.1f"|format(result.weather.temperature) }}°C</div>
+            </div>
+            <div class="data-card">
+                <h4>💧 Humidity</h4>
+                <div class="data-value">{{ "%.1f"|format(result.weather.humidity) }}%</div>
+            </div>
+            <div class="data-card">
+                <h4>🌧️ Rainfall</h4>
+                <div class="data-value">{{ "%.1f"|format(result.weather.rainfall) }} mm</div>
+            </div>
+            <div class="data-card">
+                <h4>🧪 Soil pH</h4>
+                <div class="data-value">{{ "%.2f"|format(result.soil.ph) }}</div>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 25px; color: #2c5f2d;">🌱 Soil Nutrients (mg/kg)</h4>
+        <div class="data-grid">
+            <div class="data-card">
+                <h4>N - Nitrogen</h4>
+                <div class="data-value">{{ "%.1f"|format(result.soil.nitrogen) }}</div>
+            </div>
+            <div class="data-card">
+                <h4>P - Phosphorus</h4>
+                <div class="data-value">{{ "%.1f"|format(result.soil.phosphorus) }}</div>
+            </div>
+            <div class="data-card">
+                <h4>K - Potassium</h4>
+                <div class="data-value">{{ "%.1f"|format(result.soil.potassium) }}</div>
+            </div>
+        </div>
+
+        <div class="result-item" style="margin-top: 20px; background: #fff3cd; border-left: 5px solid #ffc107;">
+            <strong>💡 Recommendation:</strong>
+            {% if result.risk_level == 'High' %}
+            Consider immediate treatment for disease control and monitor environmental conditions closely. 
+            Price adjustment recommended based on high risk.
+            {% elif result.risk_level == 'Medium' %}
+            Monitor crop health regularly and maintain optimal growing conditions. 
+            Moderate price adjustment may be warranted.
+            {% else %}
+            Crop is in good health. Continue current maintenance practices. 
+            Premium pricing may be justified.
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <a href="/dashboard/seller" class="back-link">⬅ Back to Seller Dashboard</a>
+</div>
+
+<script>
+let map, marker;
+let selectedLat = null, selectedLon = null;
+
+// Initialize map on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+
+function initMap() {
+    // Initialize map centered on India
+    map = L.map('map').setView([20.5937, 78.9629], 5);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    }).addTo(map);
+    
+    // Add click event
+    map.on('click', function(e) {
+        selectedLat = e.latlng.lat.toFixed(6);
+        selectedLon = e.latlng.lng.toFixed(6);
+        
+        // Remove existing marker
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        
+        // Add new marker
+        marker = L.marker([selectedLat, selectedLon]).addTo(map);
+        marker.bindPopup(`<b>Selected Location</b><br>Lat: ${selectedLat}<br>Lon: ${selectedLon}`).openPopup();
+        
+        // Update display and hidden inputs
+        document.getElementById('displayLat').textContent = selectedLat;
+        document.getElementById('displayLon').textContent = selectedLon;
+        document.getElementById('latitude').value = selectedLat;
+        document.getElementById('longitude').value = selectedLon;
+    });
+}
+</script>
+</body>
+</html>
